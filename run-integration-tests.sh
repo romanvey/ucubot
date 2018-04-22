@@ -1,2 +1,2 @@
-docker-compose -f docker-compose-test.yml build
-docker-compose -f docker-compose-test.yml up
+sudo docker-compose -f docker-compose-test.yml build
+sudo docker-compose -f docker-compose-test.yml up

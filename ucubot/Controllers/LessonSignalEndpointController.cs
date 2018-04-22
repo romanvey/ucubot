@@ -96,25 +96,36 @@ namespace ucubot.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateSignal(SlackMessage message)
         {
-            // Console.WriteLine(message.user_id);
-            // Console.WriteLine(message.text);
-            // Console.WriteLine("!!!!");
             var userId = message.user_id;
             var signalType = message.text.ConvertSlackMessageToSignalType();
 
             var connectionString = _configuration.GetConnectionString("BotDatabase");
             var conn = new MySqlConnection(connectionString);
             conn.Open();
-            var command =
-                new MySqlCommand("INSERT INTO lesson_signal (user_id, signal_type) VALUES (@userId, @signalType);",
-                    conn);
-            command.Parameters.AddWithValue("userId", userId);
-            command.Parameters.AddWithValue("signalType", signalType);
-            await command.ExecuteNonQueryAsync();
-    
-            conn.Close();
+            
+            MySqlCommand checkExists = new MySqlCommand("SELECT COUNT(*) FROM student WHERE (user_id = @user)" , conn);
+            checkExists.Parameters.AddWithValue("@user", userId);
+            int userExists = (int)checkExists.ExecuteScalar();
 
-            return Accepted();
+            if (userExists >= 1)
+            {
+                var command =
+                    new MySqlCommand("INSERT INTO lesson_signal (student_id, signal_type) VALUES (@userId, @signalType);",
+                        conn);
+                command.Parameters.AddWithValue("userId", userId);
+                command.Parameters.AddWithValue("signalType", signalType);
+                await command.ExecuteNonQueryAsync();
+    
+                conn.Close();
+
+                return Accepted();
+            }
+            else
+            {
+                return BadRequest();
+            }
+            
+            
         }
         
         [HttpDelete("{id}")]
